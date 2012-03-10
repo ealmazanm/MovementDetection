@@ -1,3 +1,12 @@
+/**
+* BackgroundSubtraction_factory.h
+* Abstract class for developing a object factory. 
+* The factory creates different ways of implementing the background subtraction.
+*
+* Libraries: OpenNI, OpenCV.
+*
+* Author: Emilio J. Almazan <emilio.almazan@kingston.ac.uk>, 2012
+*/
 #pragma once
 #include "XnCppWrapper.h"
 #include "opencv/cv.h"
@@ -11,8 +20,6 @@ const int BGS_THRESHOLD = 100;
 class BackgroundSubtraction_factory
 {
 public:
-//	BackgroundSubtraction_factory(void);
-//	~BackgroundSubtraction_factory(void);
 
 	//Abstract method to be implemented. Perfoms a background subtraction for movement detection
 	virtual void subtraction(vector<XnPoint3D>* points2D, const void* currentMap) = 0;

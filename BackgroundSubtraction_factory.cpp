@@ -1,3 +1,12 @@
+/**
+* BackgroundSubtraction_factory.cpp
+* Abstract class for developing a object factory. 
+* Implementation of the commong methods for every background subtractor.
+*
+* Libraries: OpenNI, OpenCV.
+*
+* Author: Emilio J. Almazan <emilio.almazan@kingston.ac.uk>, 2012
+*/
 #include "BackgroundSubtraction_factory.h"
 
 	
