@@ -33,7 +33,7 @@ public:
 	BackgroundDepthSubtraction(const XnDepthPixel*);
 	~BackgroundDepthSubtraction(void);
 
-	//Performa a sustraction between currentDepth and backGroundDepth. The result is stored in the list points2D
+	//Performa a depth background sustraction
 	virtual void subtraction(vector<XnPoint3D>* points2D, const void* currentMap);
 
 };

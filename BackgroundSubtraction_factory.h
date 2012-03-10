@@ -13,9 +13,9 @@
 
 
 const int MAX_DEPTH = 10000;
-const double ALPHA = 0.05;
+const double ALPHA = 0.09;
 //Threshold for the background depth subtraction (mm)
-const int BGS_THRESHOLD = 100;
+const int BGS_THRESHOLD = 30;
 
 class BackgroundSubtraction_factory
 {
