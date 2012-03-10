@@ -31,7 +31,7 @@ int main()
 	
 	cam.getContext()->StartGeneratingAll();
 	cam.getContext()->WaitAndUpdateAll();
-	BackgroundDepthSubtraction subtractor(cam.getDepthNode()->GetDepthMap());
+	BackgroundSubtraction_factory* subtractor = new BackgroundDepthSubtraction(cam.getDepthNode()->GetDepthMap());
 	bool stop = false;
 	unsigned short depth[MAX_DEPTH];
 	unsigned short depth_back[MAX_DEPTH];
@@ -42,10 +42,10 @@ int main()
 		cam.getContext()->WaitAndUpdateAll();
 		Utils::initImage(backImg, 0);
 		const XnDepthPixel* dm = cam.getDepthNode()->GetDepthMap();
-		subtractor.subtraction(&points2D, dm);
-		BackgroundDepthSubtraction::createBackImage(&points2D, backImg);
+		subtractor->subtraction(&points2D, dm);
+		subtractor->createBackImage(&points2D, backImg);
 
-		const XnDepthPixel* backDm = subtractor.getBackgroundDepth();
+		const XnDepthPixel* backDm = (const XnDepthPixel*)subtractor->getBackgroundModel();
 
 		//create depth image
 		depth_data_back = new char[640*480*3];
