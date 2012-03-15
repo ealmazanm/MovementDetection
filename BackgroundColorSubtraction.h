@@ -11,6 +11,6 @@ public:
 	~BackgroundColorSubtraction(void);
 
 	//Performa a color background sustraction
-	virtual void subtraction(vector<XnPoint3D>* points2D, const void* currentMap);
+	virtual int subtraction(vector<XnPoint3D>* points2D, const void* currentMap);
 };
 

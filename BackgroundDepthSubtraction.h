@@ -34,7 +34,7 @@ public:
 	~BackgroundDepthSubtraction(void);
 
 	//Performa a depth background sustraction
-	virtual void subtraction(vector<XnPoint3D>* points2D, const void* currentMap);
+	virtual int subtraction(XnPoint3D* points2D, const void* currentMap);
 
 };
 

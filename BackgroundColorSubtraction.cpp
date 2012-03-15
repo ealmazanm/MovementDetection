@@ -15,8 +15,9 @@ BackgroundColorSubtraction::~BackgroundColorSubtraction(void)
 
 
 //Public methods implementation
-void BackgroundColorSubtraction::subtraction(vector<XnPoint3D>* points2D, const void* currentGray)
+int BackgroundColorSubtraction::subtraction(vector<XnPoint3D>* points2D, const void* currentGray)
 {
+	int cont = 0;
 	//perform the subtraction (|current(x,y)-back(x,y)|>BGS_THRESHOLD. Add points to the list
 	for (int y = 0; y < XN_VGA_Y_RES; y++)
 	{
@@ -30,11 +31,11 @@ void BackgroundColorSubtraction::subtraction(vector<XnPoint3D>* points2D, const 
 			{
 				XnPoint3D p;
 				p.X = (XnFloat)x; p.Y = (XnFloat)y; //p.Z = (XnFloat)current_depth;
-				points2D->push_back(p);
+				(*points2D)[cont++] = p;
 			}
 			//update the background (alpha*Current(x,y) + (1-alpha)*back(x,y))
-			ptr_Back[x] = ALPHA*current_color + (1-ALPHA)*back_color;
-			
+			ptr_Back[x] = ALPHA*current_color + (1-ALPHA)*back_color;			
 		}
 	}
+	return 0;
 }

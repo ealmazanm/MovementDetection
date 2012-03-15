@@ -11,6 +11,11 @@
 #include "BackgroundDepthSubtraction.h"
 #include "BackgroundColorSubtraction.h"
 
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/date_time/posix_time/posix_time_types.hpp"
+#include <boost/date_time/posix_time/ptime.hpp>
+
+using namespace boost::posix_time;
 
 /*
 Three different types of background subtraction method
@@ -19,136 +24,119 @@ Three different types of background subtraction method
  3.- Using a combinagion of depth and color.
 */
 const int BACKGROUND_SUB_TYPE = 1;
+const int PERCENTAGE_OF_POINTS = 15;
+
+ofstream outDebug(filePaths::DEBUG_FILEPATH, ios::out);
+
 
 void depthBackgroundSub(CameraProperties* cam)
 {
-	char* windName_Depth = "Depth image";
+	//char* windName_Depth = "Depth image";
 	char* windName_Back = "Background subtraction";
-	char* windName_BackModel = "Background Model";
-	IplImage* depthImg = cvCreateImageHeader(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 3);
+	//IplImage* depthImg = cvCreateImageHeader(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 3);
 	IplImage* backImg = cvCreateImage(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 1);
-	IplImage* backImg_model = cvCreateImageHeader(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 3);
-	cvNamedWindow(windName_Depth);
+	//cvNamedWindow(windName_Depth);
 	cvNamedWindow(windName_Back);
-	cvNamedWindow(windName_BackModel);
-
 
 	cam->getContext()->StartGeneratingAll();
-	cam->getContext()->WaitAndUpdateAll();
-	BackgroundSubtraction_factory* subtractor = new BackgroundDepthSubtraction(cam->getDepthNode()->GetDepthMap());
+
 	bool stop = false;
-	unsigned short depth[MAX_DEPTH];
-	unsigned short depth_back[MAX_DEPTH];
-	char *depth_data, *depth_data_back;
-	vector<XnPoint3D> points2D;
+	bool firstTime = true;
+
+	int total = XN_VGA_Y_RES*XN_VGA_X_RES;
+	BackgroundSubtraction_factory* subtractor;
+	//allocate enough memory in advance (15% of the total points)
+	XnPoint3D* points2D = new XnPoint3D[PERCENTAGE_OF_POINTS*total/100];	
+	int numPoints = 0;
+	int contFrames = 0;
+
 	while (!stop)
 	{
-		cam->getContext()->WaitAndUpdateAll();
-		Utils::initImage(backImg, 0);
-		const XnDepthPixel* dm = cam->getDepthNode()->GetDepthMap();
-		subtractor->subtraction(&points2D, dm);
-		subtractor->createBackImage(&points2D, backImg);
+		
 
-		const XnDepthPixel* backDm = (const XnDepthPixel*)subtractor->getBackgroundModel();
+		cam->getContext()->WaitAndUpdateAll();
+	
+		const XnDepthPixel* dm = cam->getDepthNode()->GetDepthMap();
+
+		ptime time_start_wait(microsec_clock::local_time());
+		if (contFrames == 0)
+			subtractor = new BackgroundDepthSubtraction(dm);
+		else
+			numPoints = subtractor->subtraction(points2D, dm); //returns the num poins of foreground
+		
+		
+		
+		Utils::initImage(backImg, 0);
+		subtractor->createBackImage(points2D, backImg, numPoints);
 
 		//create depth image
-		depth_data_back = new char[640*480*3];
-		Utils::raw2depth(depth_back, MAX_DEPTH);
-		Utils::depth2rgb(backDm, depth_back, depth_data_back);
-		cvSetData(backImg_model, depth_data_back, 640*3);	
-
-		depth_data = new char[640*480*3];
-		Utils::raw2depth(depth, MAX_DEPTH);
-		Utils::depth2rgb(dm, depth, depth_data);
-		cvSetData(depthImg, depth_data, 640*3);	
+		//depth_data = new char[640*480*3];
+		//Utils::raw2depth(depth, MAX_DEPTH);
+		//Utils::depth2rgb(dm, depth, depth_data);
+		//cvSetData(depthImg, depth_data, 640*3);	
 
 		//display images
-		cvShowImage(windName_Depth, depthImg);
+	//	cvShowImage(windName_Depth, depthImg);
 		cvShowImage(windName_Back, backImg);
-		cvShowImage(windName_BackModel, backImg_model);
 
-		delete(depth_data);
-		delete(depth_data_back);
-		points2D.clear();
+
+	////	delete(depth_data);
 		char c = cvWaitKey(1);
-		stop = (c == 27);
+
+		ptime time_end_wait(microsec_clock::local_time());
+		time_duration duration_wait(time_end_wait - time_start_wait);
+		outDebug << "Time report(bgs+show): " << duration_wait.total_microseconds() << endl;
+
+
+
+	//	stop = (c == 27);
+
+		stop = cam->getDepthNode()->GetFrameID() == 350;
+
+		if (cam->getDepthNode()->GetFrameID() == 1)
+			if (firstTime ? firstTime = false : stop = true);
+
+		contFrames++;
 	}
+	//ptime time_end(microsec_clock::local_time());
+	//time_duration duration(time_end - time_start);
+	//double totalSecs = duration.total_microseconds()/1000000;
+	//double fps = contFrames/totalSecs;
+	//cout << "Fps: " << fps << endl;
 
 	cam->getContext()->StopGeneratingAll();
-	cvReleaseImageHeader(&depthImg);
+	cam->getContext()->Shutdown();
+
+	//free memory
 	cvReleaseImage(&backImg);
-	cvReleaseImageHeader(&backImg_model);
+	//cvReleaseImageHeader(&depthImg);
+	cvDestroyAllWindows();
+	delete(points2D);
 }
 
-void rgbBackgroundSub(CameraProperties* cam)
-{
-	char* windName_RGB = "RGB image";
-	char* windName_Back = "Background subtraction";
-	char* windName_BackModel = "Background Model";
-	cvNamedWindow(windName_RGB);
-	cvNamedWindow(windName_Back);
-	cvNamedWindow(windName_BackModel);
-
-	IplImage* subtractImg = cvCreateImage(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 1);
-	IplImage* currentImg_RGB = cvCreateImage(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 3);
-	IplImage* currentImg_Gray = cvCreateImage(cvSize(XN_VGA_X_RES, XN_VGA_Y_RES), IPL_DEPTH_8U, 1);
-	
-	cam->getContext()->StartGeneratingAll();
-	//Take the background model
-	cam->getContext()->WaitAndUpdateAll();
-	const XnRGB24Pixel* rgbMap = cam->getImageNode()->GetRGB24ImageMap();
-	Utils::fillImageDataFull(currentImg_RGB, rgbMap);
-	cvConvertImage(currentImg_RGB, currentImg_Gray, CV_BGR2GRAY);
-	BackgroundSubtraction_factory* subtractor = new BackgroundColorSubtraction(currentImg_Gray);
-	bool stop = false;
-	vector<XnPoint3D> points2D;
-	while (!stop)
-	{
-		cam->getContext()->WaitAndUpdateAll();
-		Utils::initImage(subtractImg, 0);
-		rgbMap = cam->getImageNode()->GetRGB24ImageMap();
-		Utils::fillImageDataFull(currentImg_RGB, rgbMap);
-		cvConvertImage(currentImg_RGB, currentImg_Gray, CV_BGR2GRAY);
-		subtractor->subtraction(&points2D, currentImg_Gray);
-		subtractor->createBackImage(&points2D, subtractImg);
-
-		const IplImage* backDm = (const IplImage*)subtractor->getBackgroundModel();
-
-		//display images
-		cvShowImage(windName_RGB, subtractImg);
-		cvShowImage(windName_Back, currentImg_RGB);
-		cvShowImage(windName_BackModel, backDm);
-
-		points2D.clear();
-		char c = cvWaitKey(1);
-		stop = (c == 27);
-	}
-	
-	cam->getContext()->StopGeneratingAll();
-	cvReleaseImage(&currentImg_RGB);
-	cvReleaseImage(&subtractImg);
-	cvReleaseImage(&currentImg_Gray);
-
-}
 
 void rgbdBackgroundSub(CameraProperties* cam)
 {
 }
 
+void rgbBackgroundSub(CameraProperties* cam)
+{
+}
 
 int main()
 {
 	CameraProperties cam;
-	//Utils::rgbdInit(&cam, 1);
-	cam.getContext()->Init();
-	cam.getContext()->OpenFileRecording("D:\\pruebaKinect.oni");
-	cam.getContext()->FindExistingNode(XN_NODE_TYPE_DEPTH, *(cam.getDepthNode()));
-	cam.getContext()->FindExistingNode(XN_NODE_TYPE_IMAGE, *(cam.getImageNode()));
+	Utils::rgbdInit(&cam, 1);
+	//cam.getContext()->Init();
+	//cam.getContext()->OpenFileRecording("D:\\pruebaKinect.oni");
+	//cam.getContext()->FindExistingNode(XN_NODE_TYPE_DEPTH, *(cam.getDepthNode()));
+	//cam.getContext()->FindExistingNode(XN_NODE_TYPE_IMAGE, *(cam.getImageNode()));
 
 	switch (BACKGROUND_SUB_TYPE)
 	{
 	case 1: //Depth
 		{
+			//depthBackgrounSub_Memory(&cam);
 			depthBackgroundSub(&cam);
 			break;
 		}

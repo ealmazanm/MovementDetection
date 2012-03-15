@@ -15,15 +15,16 @@ const void* BackgroundSubtraction_factory::getBackgroundModel()
 	return backGroundModel;
 }
 
-void BackgroundSubtraction_factory::createBackImage(const vector<XnPoint3D>* points2D, IplImage* backImg)
+void BackgroundSubtraction_factory::createBackImage(const XnPoint3D* points2D, IplImage* backImg, int numPoints)
 {
-	vector<XnPoint3D>::const_iterator iter;
-	for (iter = points2D->begin(); iter != points2D->end(); iter++)
+	int cont;
+	for (cont = 0; cont < numPoints; cont++)
 	{
-		XnPoint3D p = *iter;
+		XnPoint3D p = points2D[cont];
 		int y = (int)p.Y;
 		int x = (int)p.X;
 		uchar* ptr = (uchar*)(backImg->imageData + (y*(backImg->widthStep)));
 		ptr[x] = 255;
+		cont++;
 	}
 }
