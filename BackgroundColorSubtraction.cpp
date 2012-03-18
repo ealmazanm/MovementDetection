@@ -34,7 +34,7 @@ int BackgroundColorSubtraction::subtraction(vector<XnPoint3D>* points2D, const v
 				(*points2D)[cont++] = p;
 			}
 			//update the background (alpha*Current(x,y) + (1-alpha)*back(x,y))
-			ptr_Back[x] = ALPHA*current_color + (1-ALPHA)*back_color;			
+			ptr_Back[x] = ALPHA_FOREGROUND*current_color + (1-ALPHA_FOREGROUND)*back_color;			
 		}
 	}
 	return 0;
