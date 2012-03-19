@@ -21,7 +21,7 @@
 using namespace boost::posix_time;
 
 const int PERCENTAGE_OF_POINTS = 80;
-const bool PARALLEL_PROCESS = false;
+const bool PARALLEL_PROCESS = true;
 
 
 //Perform a background subtraction in two cameras in a sequencial way
@@ -107,11 +107,13 @@ void depthBackgroundSub_Seq(CameraProperties* cam1,  CameraProperties* cam2, ofs
 	cam2->getContext()->StopGeneratingAll();
 
 	//free memory
-	cvReleaseImageHeader(&backImg1);
-	cvReleaseImageHeader(&backImg2);
+	cvReleaseImage(&backImg1);
+	cvReleaseImage(&backImg2);
 	cvDestroyAllWindows();
 	delete(points2D_1);
 	delete(points2D_2);
+	delete(subtractor1);
+	delete(subtractor2);
 }
 
 
@@ -155,15 +157,15 @@ void depthBackgroundSub_Par(CameraProperties* cam, ofstream* outDebug)
 		//time_duration duration_wait(time_end_wait - time_start_wait);
 		//(*outDebug) << "Time report(bgs "<< camId << "): " << duration_wait.total_microseconds() << endl;
 				
-//		Utils::initImage(backImg, 0);
-//		subtractor->createBackImage(points2D, backImg, numPoints);
+		Utils::initImage(backImg, 0);
+		subtractor->createBackImage(points2D, backImg, numPoints);
 
 		//display image
-//		cvShowImage(windName_Back, backImg);
-//		char c = cvWaitKey(1);
-//		stop = (c == 27) || (cam->getDepthNode()->GetFrameID() == 250);
+		cvShowImage(windName_Back, backImg);
+		char c = cvWaitKey(1);
+		stop = (c == 27) || (cam->getDepthNode()->GetFrameID() == 250);
 		
-		stop = (contFrames == 250);
+//		stop = (contFrames == 250);
 		//for recorded videos
 	//	if (cam->getDepthNode()->GetFrameID() == 1)
 	//		if (firstTime ? firstTime = false : stop = true);
@@ -182,6 +184,7 @@ void depthBackgroundSub_Par(CameraProperties* cam, ofstream* outDebug)
 	cvReleaseImage(&backImg);
 	cvDestroyAllWindows();
 	delete(points2D);
+	delete(subtractor);
 }
 
 

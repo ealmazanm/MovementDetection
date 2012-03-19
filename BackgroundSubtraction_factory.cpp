@@ -25,6 +25,5 @@ void BackgroundSubtraction_factory::createBackImage(const XnPoint3D* points2D, I
 		int x = (int)p.X;
 		uchar* ptr = (uchar*)(backImg->imageData + (y*(backImg->widthStep)));
 		ptr[x] = 255;
-		cont++;
 	}
 }

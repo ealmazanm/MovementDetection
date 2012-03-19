@@ -14,8 +14,8 @@
 
 
 const int MAX_DEPTH = 10000;
-const double ALPHA_FOREGROUND = 0.2;
-const double ALPHA_BACKGROUND = 0.0005;
+const double ALPHA_FOREGROUND = 0.05;
+const double ALPHA_BACKGROUND = 0.005;
 //Threshold for the background depth subtraction (mm)
 const int BGS_THRESHOLD = 500;
 
