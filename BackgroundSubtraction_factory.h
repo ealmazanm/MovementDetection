@@ -13,7 +13,7 @@
 #include <list>
 
 
-const int MAX_DEPTH = 10000;
+//const int MAX_DEPTH = 10000;
 const double ALPHA_FOREGROUND = 0.05;
 const double ALPHA_BACKGROUND = 0.005;
 //Threshold for the background depth subtraction (mm)
@@ -27,6 +27,8 @@ public:
 
 	//Abstract method to be implemented. Perfoms a background subtraction for movement detection
 	virtual int subtraction(XnPoint3D* points2D, const void* currentMap) = 0;
+
+	virtual void initBackgroundModel(const XnDepthPixel*) = 0;
 
 	//Return the background model
 	const void* getBackgroundModel();

@@ -30,8 +30,11 @@ using std::string;
 class BackgroundDepthSubtraction : public BackgroundSubtraction_factory
 {
 public:
+	BackgroundDepthSubtraction();
 	BackgroundDepthSubtraction(const XnDepthPixel*);
 	~BackgroundDepthSubtraction(void);
+
+	virtual void initBackgroundModel(const XnDepthPixel*);
 
 	//Performa a depth background sustraction
 	virtual int subtraction(XnPoint3D* points2D, const void* currentMap);

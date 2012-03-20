@@ -49,8 +49,8 @@ void depthBackgroundSub_Seq(CameraProperties* cam1,  CameraProperties* cam2, ofs
 	int numPoints_2 = 0;
 	int contFrames = 0;
 
-	unsigned short depth[MAX_DEPTH];
-	unsigned short depth2[MAX_DEPTH];
+//	unsigned short depth[MAX_DEPTH];
+//	unsigned short depth2[MAX_DEPTH];
 	char *depth_data, *depth_data2;
 	while (!stop)
 	{

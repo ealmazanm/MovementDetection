@@ -15,6 +15,7 @@ const void* BackgroundSubtraction_factory::getBackgroundModel()
 	return backGroundModel;
 }
 
+
 void BackgroundSubtraction_factory::createBackImage(const XnPoint3D* points2D, IplImage* backImg, int numPoints)
 {
 	int cont;

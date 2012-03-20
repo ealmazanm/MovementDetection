@@ -9,6 +9,10 @@
 #include "BackgroundDepthSubtraction.h"
 
 
+BackgroundDepthSubtraction::BackgroundDepthSubtraction()
+{
+}
+
 BackgroundDepthSubtraction::BackgroundDepthSubtraction(const XnDepthPixel* depthMap)
 {
 	backGroundModel = new XnDepthPixel[XN_VGA_Y_RES*XN_VGA_X_RES];
@@ -23,6 +27,13 @@ BackgroundDepthSubtraction::~BackgroundDepthSubtraction(void)
 
 
 //Public methods implementation
+void BackgroundDepthSubtraction::initBackgroundModel(const XnDepthPixel* depthMap)
+{
+	backGroundModel = new XnDepthPixel[XN_VGA_Y_RES*XN_VGA_X_RES];
+	Utils::copyDepthMap(depthMap, (XnDepthPixel*)backGroundModel);
+
+}
+
 int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, const void* currentDepth)
 {
 	const XnDepthPixel* currentMap = (const XnDepthPixel*)currentDepth;
@@ -37,7 +48,7 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, const void* cur
 			float backVal = backMat[y*XN_VGA_X_RES+x];
 			if (curretnVal != 0  && backVal != 0) 
 			{
-				if (abs(curretnVal-backVal) > BGS_THRESHOLD)
+				if ((abs(curretnVal-backVal) > BGS_THRESHOLD) && (curretnVal < backVal)) // second condition: not include the shadow points
 				{
 					if (cont >= MAX_FORGROUND_POINTS)
 					{
