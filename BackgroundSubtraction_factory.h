@@ -14,10 +14,10 @@
 
 
 //const int MAX_DEPTH = 10000;
-const double ALPHA_FOREGROUND = 0.05;
+const double ALPHA_FOREGROUND = 0.02;
 const double ALPHA_BACKGROUND = 0.005;
 //Threshold for the background depth subtraction (mm)
-const int BGS_THRESHOLD = 500;
+const int BGS_THRESHOLD = 400;
 
 const int MAX_FORGROUND_POINTS = 80*XN_VGA_Y_RES*XN_VGA_X_RES/100;
 
