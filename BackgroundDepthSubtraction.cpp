@@ -23,7 +23,6 @@ BackgroundDepthSubtraction::BackgroundDepthSubtraction(const XnDepthPixel* depth
 
 BackgroundDepthSubtraction::~BackgroundDepthSubtraction(void)
 {
-	delete(backGroundModel);
 }
 
 
