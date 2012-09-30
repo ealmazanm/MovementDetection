@@ -17,6 +17,7 @@
 #include "XnCppWrapper.h"
 #include "Utils.h"
 #include "KinectSensor.h"
+#include <cvblob.h>
 
 using namespace std;
 using namespace cv;
@@ -24,10 +25,12 @@ using namespace xn;
 
 
 //const int MAX_DEPTH = 10000;
-const double ALPHA_FOREGROUND = 0.02;
+const double ALPHA_FOREGROUND = 0.000005;
 const double ALPHA_BACKGROUND = 0.005;
 //Threshold for the background depth subtraction (mm)
-const int BGS_THRESHOLD = 400;
+const int BGS_THRESHOLD = 200;
+
+const int NUM_INIT_FRAMES = 10;
 
 const int MAX_FORGROUND_POINTS = 80*XN_VGA_Y_RES*XN_VGA_X_RES/100;
 
@@ -49,9 +52,16 @@ public:
 
 	//Performa a depth background sustraction
 	int subtraction(XnPoint3D* points2D, const XnDepthPixel* currentDepth);
+	int subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask, Rect* peopleOut);
 
 private:
 	XnDepthPixel* backGroundModel;
+	Mat backgroundModel_img;
+	Mat maskModel; //image with null values
+	int contInit;
 	bool init;
+
+	IplImage* labelImg;
+	cvb::CvBlobs blobs;
 };
 
