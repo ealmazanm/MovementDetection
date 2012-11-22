@@ -53,7 +53,7 @@ public:
 
 	//Performa a depth background sustraction
 	int subtraction(XnPoint3D* points2D, const XnDepthPixel* currentDepth);
-	int subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask, Rect* peopleOut);
+	int subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask);
 	void subtraction(Mat* currentDepth, Mat* mask, ForgroundObjs* peopleOut);
 
 private:

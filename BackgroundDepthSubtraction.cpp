@@ -68,7 +68,7 @@ void BackgroundDepthSubtraction::createBackImage(const XnPoint3D* points2D, Mat&
 ofstream outDebug("d:\\Debug.txt", ios::out);
 //CurrentDepth: CV_16U (ushort)
 //Mask: mask of noise (noise = 1)
-int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask, Rect* peopleOut)
+int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask)
 {
 	int nPeop = 0;
 	int cont = 0;
@@ -118,7 +118,7 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 			Mat roi_label = label_mask(roi);
 			Mat roi_bw = bw(roi);
 
-			peopleOut[nPeop++] = roi;
+			//peopleOut[nPeop++] = roi;
 
 			//Updates the 0 values of roi_label with the ushort_Max values of roi_bw (foreground)
 			bitwise_or(roi_label, roi_bw, roi_label); //0 and ushort_Max values in roi_label
@@ -158,7 +158,7 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 
 
 	}
-	//return nPeop;
+	//return nPoints;
 	return cont;
 }
 
