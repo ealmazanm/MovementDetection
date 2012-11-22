@@ -97,14 +97,17 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 		Mat bw = out > BGS_THRESHOLD; //bw is type CV_16U
 		//Morphological operation
 		Mat m;
-		erode(bw, bw, m);
+		erode(bw, bw, m); //bw it still has noise in form of small regions
 		//Connected components
 		IplImage img = bw;
 		unsigned int result = cvLabel(&img, labelImg, blobs);
 //		cvFilterByLabel(blobs,cvGreaterBlob(blobs));
 		//Filtering the blobs
 		cvFilterByArea(blobs,5000,500000);
-		Mat label_mask = Mat::zeros(bw.size(), CV_8U); //used for the updating step
+
+		//label_mask is the output image with the foreground objects (no noise)
+		//used for the updating step
+		Mat label_mask = Mat::zeros(bw.size(), CV_8U); 
 		for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
 		{
 			int maxX = it->second->maxx;
@@ -117,18 +120,17 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 
 			peopleOut[nPeop++] = roi;
 
+			//Updates the 0 values of roi_label with the ushort_Max values of roi_bw (foreground)
+			bitwise_or(roi_label, roi_bw, roi_label); //0 and ushort_Max values in roi_label
 
-			//add(roi_label, roi_bw, roi_label);
-			//Updates the 0 values of roi_label with the 255 values of roi_bw (foreground)
-			bitwise_or(roi_label, roi_bw, roi_label); //0 and 255 values in roi_label
-
-			//Obtain all the pixels (this is for the demo, it will have to return people instead of points
+			//Obtain all the pixels (this is for the demo, it will have to return people instead of points)
 			for (int i = minY; i < maxY; i++)
 			{
 				for (int j = minX; j < maxX; j++)
 				{
-					ushort maskVal = bw.ptr<uchar>(i)[j];
-					if (maskVal != 0)
+					//ushort maskVal = bw.ptr<uchar>(i)[j];
+					ushort maskVal = label_mask.ptr<uchar>(i)[j];
+					if (maskVal == 255)
 					{
 						ushort curretnVal = currentDepth->ptr<ushort>(i)[j];
 						XnPoint3D p;
@@ -159,6 +161,103 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 	//return nPeop;
 	return cont;
 }
+
+
+/*
+Detection of foreground objects.
+Parametres:
+IN--currentDepth: Ushort matrix of depths in mm.
+IN--mask: Noise mask (noise != 0)
+OUT--peopleOut: Object containing all the people in the image
+
+Return number of people detected
+*/
+void BackgroundDepthSubtraction::subtraction(Mat* currentDepth, Mat* mask, ForgroundObjs* peopleOut)
+{
+	int nPeop = 0;
+	Rect people[10];
+	int cont = 0;
+	//Create a model without moving object.
+	//It also reduces the blinking noise
+	if (contInit < NUM_INIT_FRAMES)
+	{
+		if (contInit == 0)
+		{
+			currentDepth->copyTo(backgroundModel_img);
+			mask->copyTo(maskModel);
+		}
+		else
+		{
+			cv::add(*currentDepth, backgroundModel_img, backgroundModel_img, maskModel);
+			bitwise_and(*mask, maskModel, maskModel);
+		}
+		contInit++;
+	}
+	else
+	{
+		Mat out;
+		//Assigned bg Model values to current img null values. So the subtraction does only apply to null values
+		cv::add(*currentDepth, backgroundModel_img, *currentDepth, *mask);
+		absdiff(*currentDepth, backgroundModel_img, out); //out is type CV_16U
+		Mat bw = out > BGS_THRESHOLD; //bw is type CV_16U
+		//Morphological operation
+		Mat m;
+		erode(bw, bw, m); //bw it still has noise in form of small regions
+		//Connected components
+		IplImage img = bw;
+		unsigned int result = cvLabel(&img, labelImg, blobs);
+//		cvFilterByLabel(blobs,cvGreaterBlob(blobs));
+		//Filtering the blobs
+		cvFilterByArea(blobs,5000,500000);
+
+		//label_mask is the output image with the foreground objects (no noise)
+		//used for the updating step
+		Mat label_mask = Mat::zeros(bw.size(), CV_8U);
+		Mat zero_mask = Mat::zeros(bw.size(), CV_16U); 
+		//image that stores only the depth of the foreground pixels. the rest values are 0.
+		Mat fDepth = Mat::zeros(bw.size(), CV_16U); 
+		for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
+		{
+			int maxX = it->second->maxx;
+			int maxY = it->second->maxy;
+			int minX = it->second->minx;
+			int minY = it->second->miny;
+			Rect roi(minX, minY, maxX-minX, maxY-minY);
+			Mat roi_label = label_mask(roi);
+			Mat roi_bw = bw(roi);
+
+			people[nPeop++] = roi;
+
+			//Updates the 0 values of roi_label with the 255 values of roi_bw (foreground)
+			bitwise_or(roi_label, roi_bw, roi_label); //0 and 255 values in roi_label
+		}
+		if (nPeop > 0)
+		{
+			peopleOut->setNumObj(nPeop);
+			peopleOut->setBBoxes(people);
+			cv::add(zero_mask, *currentDepth, fDepth, label_mask);
+			peopleOut->setForImg(fDepth);
+			peopleOut->recoverFPoints();
+		}
+
+		//updates bg and fg pixels of the model
+		Mat tmp1, tmp2;
+		tmp1 = ALPHA_FOREGROUND* (*currentDepth);
+		tmp2 = (1-ALPHA_FOREGROUND)* backgroundModel_img;
+		cv::add(tmp1, tmp2, backgroundModel_img, label_mask); //add only in the elements of the mask not 0
+
+		tmp1 = ALPHA_BACKGROUND* (*currentDepth);
+		tmp2 = (1-ALPHA_BACKGROUND)* backgroundModel_img;
+		Mat label_mask_I;
+		cv::bitwise_not(label_mask, label_mask_I);
+
+		cv::add(tmp1, tmp2, backgroundModel_img, label_mask_I);	
+		label_mask.copyTo(*mask);
+
+
+	}
+}
+
 
 int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, const XnDepthPixel* currentDepth)
 {
