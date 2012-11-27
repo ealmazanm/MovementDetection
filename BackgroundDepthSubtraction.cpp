@@ -172,7 +172,7 @@ OUT--peopleOut: Object containing all the people in the image
 
 Return number of people detected
 */
-void BackgroundDepthSubtraction::subtraction(Mat* currentDepth, Mat* mask, ForgroundObjs* peopleOut)
+void BackgroundDepthSubtraction::subtraction(Mat* currentDepth, Mat* mask, ForegroundObjs* peopleOut)
 {
 	int nPeop = 0;
 	Rect people[10];

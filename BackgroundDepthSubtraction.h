@@ -18,7 +18,7 @@
 #include "Utils.h"
 #include "KinectSensor.h"
 #include <cvblob.h>
-#include <ForgroundObjs.h>
+#include <ForegroundObjs.h>
 
 using namespace std;
 using namespace cv;
@@ -54,7 +54,7 @@ public:
 	//Performa a depth background sustraction
 	int subtraction(XnPoint3D* points2D, const XnDepthPixel* currentDepth);
 	int subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask);
-	void subtraction(Mat* currentDepth, Mat* mask, ForgroundObjs* peopleOut);
+	void subtraction(Mat* currentDepth, Mat* mask, ForegroundObjs* peopleOut);
 
 private:
 	XnDepthPixel* backGroundModel;
