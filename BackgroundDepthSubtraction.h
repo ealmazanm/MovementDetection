@@ -26,12 +26,12 @@ using namespace xn;
 
 
 //const int MAX_DEPTH = 10000;
-const double ALPHA_FOREGROUND = 0.000005;
+const double ALPHA_FOREGROUND = 0.0005;//0.000005;
 const double ALPHA_BACKGROUND = 0.0000005;
 //Threshold for the background depth subtraction (mm)
 const int BGS_THRESHOLD = 200;
 
-const int NUM_INIT_FRAMES = 10;
+const int NUM_INIT_FRAMES = 30;
 
 const int MAX_FORGROUND_POINTS = 80*XN_VGA_Y_RES*XN_VGA_X_RES/100;
 
@@ -59,6 +59,8 @@ public:
 private:
 	XnDepthPixel* backGroundModel;
 	Mat backgroundModel_img;
+	Mat backgroundModel_time;
+	Mat unit_background;
 	Mat maskModel; //mask the noise (noise == 0)
 	int contInit;
 	bool init;
