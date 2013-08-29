@@ -57,6 +57,7 @@ public:
 	void subtraction(Mat* currentDepth, Mat* mask, ForegroundObjs* peopleOut);
 
 private:
+	void BackgroundDepthSubtraction::findBlobs(const cv::Mat &binary, std::vector < std::vector<cv::Point2i> > &blobs);
 	XnDepthPixel* backGroundModel;
 	Mat backgroundModel_img;
 	Mat backgroundModel_time;

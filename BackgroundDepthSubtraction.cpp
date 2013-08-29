@@ -218,6 +218,55 @@ void printValues(Mat& m)
 //	return cont;
 //}
 
+void BackgroundDepthSubtraction::findBlobs(const cv::Mat &binary, std::vector < std::vector<cv::Point2i> > &blobs)
+{
+    blobs.clear();
+
+    // Fill the label_image with the blobs
+    // 0  - background
+    // 1  - unlabelled foreground
+    // 2+ - labelled foreground
+
+    cv::Mat label_image;
+    binary.convertTo(label_image, CV_32SC1);
+
+    int label_count = 2; // starts at 2 because 0,1 are used already
+
+    for(int y=0; y < label_image.rows; y++) 
+	{
+        int *row = (int*)label_image.ptr(y);
+        for(int x=0; x < label_image.cols; x++) 
+		{
+            if(row[x] != 1) 
+			{
+                continue;
+            }
+
+            cv::Rect rect;
+            cv::floodFill(label_image, cv::Point(x,y), label_count, &rect, 0, 0, 4);
+
+            std::vector <cv::Point2i> blob;
+
+            for(int i=rect.y; i < (rect.y+rect.height); i++) 
+			{
+                int *row2 = (int*)label_image.ptr(i);
+                for(int j=rect.x; j < (rect.x+rect.width); j++) 
+				{
+                    if(row2[j] != label_count) 
+					{
+                        continue;
+                    }
+
+                    blob.push_back(cv::Point2i(j,i));
+                }
+            }
+
+            blobs.push_back(blob);
+
+            label_count++;
+        }
+    }
+}
 
 
 int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDepth, Mat* mask)
@@ -249,8 +298,6 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 		Mat out;
 		//Assigned bg Model values to current img null values. So the subtraction does only apply to null values
 		cv::add(*currentDepth, backgroundModel_img, *currentDepth, *mask);
-		//absdiff(*currentDepth, backgroundModel_img, out); //out is type CV_16U
-		//Mat bw = out > BGS_THRESHOLD; //bw is type CV_16U
 		Mat bw = Mat::zeros(backgroundModel_img.size(), CV_8UC1);
 		//The threshold depends on the quatitation step at different distances
 		for (int i = 0; i < backgroundModel_img.rows; i++)
@@ -267,32 +314,82 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 				if (currentVal != 0)
 				{
 					int depthMt = depth/1000;
-					float thresh = (18.7441*(powf(depthMt,2)) - 33.3555*depthMt + 33.1847); //Max difference in depth values at different distances
+					//Threshold function linearized with two linear functions
+					float thresh;
+					if (depthMt > 4)
+						thresh = 229*depthMt - 810;
+					else
+						thresh = 23*depthMt + 14;
 					
-					//float thresh = (2.6206*(powf(depthMt,2)) - 0.6820*depthMt + 0.2109); //Min quantization step
-					//float thresh = 200;
+					//Quadratic function
+					//float thresh = (18.7441*(powf(depthMt,2)) - 33.3555*depthMt + 33.1847); //Max difference in depth values at different distances
+					
+					
 					if (abs(depth-currentVal) > thresh)
 					{
 						ptrBw[j] = 1;
-						XnPoint3D p;
-						p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentVal;
-						points2D[cont++] = p; 
+				//		XnPoint3D p;
+				//		p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentVal;
+				//		points2D[cont++] = p; 
 					}
 				}
 			}
 		}
-		//Check static foreground pixels
-		cv::add(unit_background, backgroundModel_time, backgroundModel_time, bw); //add unity to the foreground pixels
-		Mat bwNot;
-		bitwise_xor(bw, unit_background, bwNot);
-		threshold(bwNot, bwNot, 1, 1, CV_THRESH_BINARY_INV);
-		cv::subtract(backgroundModel_time, backgroundModel_time, backgroundModel_time, bwNot);// set to 0 the background
-		Mat bg_missed = backgroundModel_time > 100; //bw is type CV_16U
 
-		Mat tmp1, tmp2;
-		tmp1 = 0.5* (*currentDepth);
-		tmp2 = (1-0.5)* backgroundModel_img;
-		cv::add(tmp1, tmp2, backgroundModel_img, bg_missed); //add only in the elements of the mask not 0
+
+		Mat m;
+		erode(bw, bw, m);
+		for (int i = 0; i < bw.rows; i++)
+		{
+			uchar* ptrBw = bw.ptr<uchar>(i);
+			for (int j = 0; j < bw.cols; j++)
+			{
+				if (ptrBw[j] == 1)
+				{
+					XnPoint3D p;
+					p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentDepth->ptr<ushort>(i)[j];
+					points2D[cont++] = p; 
+				}
+			}
+		}
+
+		//clean the noise rejecting small areas
+		//vector<vector<Point>> blobs;
+		//findBlobs(bw, blobs);
+		//
+		//vector<vector<Point2i>>::iterator iter = blobs.begin();
+		//
+		//while (iter != blobs.end())
+		//{
+		//	vector<Point2i> b = *iter;
+		//	if (b.size() > 60) //rejection of small regions
+		//	{
+		//		for (int i = 0; i < b.size(); i++)
+		//		{
+		//			Point2i p = b[i];	
+		//			XnPoint3D p3D;
+		//			p3D.X = p.x; p3D.Y = p.y; p3D.Z = currentDepth->ptr<ushort>(p.y)[p.x];
+		//			points2D[cont++] = p3D; 
+		//		}
+		//	}
+		//	iter++;
+		//}
+		
+	
+
+
+		//Check static foreground pixels
+		//cv::add(unit_background, backgroundModel_time, backgroundModel_time, bw); //add unity to the foreground pixels
+		//Mat bwNot;
+		//bitwise_xor(bw, unit_background, bwNot);
+		//threshold(bwNot, bwNot, 1, 1, CV_THRESH_BINARY_INV);
+		//cv::subtract(backgroundModel_time, backgroundModel_time, backgroundModel_time, bwNot);// set to 0 the background
+		//Mat bg_missed = backgroundModel_time > 100; //bw is type CV_16U
+
+		//Mat tmp1, tmp2;
+		//tmp1 = 0.5* (*currentDepth);
+		//tmp2 = (1-0.5)* backgroundModel_img;
+		//cv::add(tmp1, tmp2, backgroundModel_img, bg_missed); //add only in the elements of the mask not 0
 	}
 	return cont;
 }
