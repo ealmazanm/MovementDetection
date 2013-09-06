@@ -19,6 +19,7 @@
 #include "KinectSensor.h"
 #include <cvblob.h>
 #include <ForegroundObjs.h>
+#include <ActivityMap_Utils.h>
 
 using namespace std;
 using namespace cv;
@@ -33,7 +34,7 @@ const int BGS_THRESHOLD = 200;
 
 const int NUM_INIT_FRAMES = 30;
 
-const int MAX_FORGROUND_POINTS = 80*XN_VGA_Y_RES*XN_VGA_X_RES/100;
+const int MAX_FORGROUND_POINTS = 0.5*3*XN_VGA_Y_RES*XN_VGA_X_RES;
 
 
 class BackgroundDepthSubtraction

@@ -311,26 +311,29 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 				int depth = ptrBg[j];
 				int currentVal = ptrCu[j];
 
-				if (currentVal != 0)
+				//-800: A calibration error leads to points coordinates bigger than MAX_Z. 
+				//A more accurate calibration won't required the decrement
+				if (currentVal != 0 && currentVal < (ActivityMap_Utils::MAX_Z - 1000)) 
 				{
 					int depthMt = depth/1000;
 					//Threshold function linearized with two linear functions
-					float thresh;
+					/*float thresh;
 					if (depthMt > 4)
 						thresh = 229*depthMt - 810;
 					else
-						thresh = 23*depthMt + 14;
+						thresh = 23*depthMt + 14;*/
 					
 					//Quadratic function
 					//float thresh = (18.7441*(powf(depthMt,2)) - 33.3555*depthMt + 33.1847); //Max difference in depth values at different distances
+					float thresh = (20*(powf(depthMt,2)) + 5*depthMt + 200); //Max difference in depth values at different distances
 					
 					
 					if (abs(depth-currentVal) > thresh)
 					{
 						ptrBw[j] = 1;
-				//		XnPoint3D p;
-				//		p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentVal;
-				//		points2D[cont++] = p; 
+						XnPoint3D p;
+						p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentVal;
+						points2D[cont++] = p; 
 					}
 				}
 			}
@@ -384,7 +387,7 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 		//bitwise_xor(bw, unit_background, bwNot);
 		//threshold(bwNot, bwNot, 1, 1, CV_THRESH_BINARY_INV);
 		//cv::subtract(backgroundModel_time, backgroundModel_time, backgroundModel_time, bwNot);// set to 0 the background
-		//Mat bg_missed = backgroundModel_time > 100; //bw is type CV_16U
+		//Mat bg_missed = backgroundModel_time > 10; //bw is type CV_16U
 
 		//Mat tmp1, tmp2;
 		//tmp1 = 0.5* (*currentDepth);
