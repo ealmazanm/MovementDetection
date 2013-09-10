@@ -299,38 +299,50 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 		//Assigned bg Model values to current img null values. So the subtraction does only apply to null values
 		cv::add(*currentDepth, backgroundModel_img, *currentDepth, *mask);
 		Mat bw = Mat::zeros(backgroundModel_img.size(), CV_8UC1);
+
+		ushort* bMdl_data = (ushort*)backgroundModel_img.data;
+		int bMdl_step = backgroundModel_img.step/sizeof(ushort);
+
+		uchar* bw_data = bw.data;
+		int bw_step = bw.step;
+
+		ushort* crrnt_data = (ushort*)currentDepth->data;
+		int crrnt_step = currentDepth->step/sizeof(ushort);
+
+		int bckRows = backgroundModel_img.rows;
+		int bckCols = backgroundModel_img.cols;
+
 		//The threshold depends on the quatitation step at different distances
-		for (int i = 0; i < backgroundModel_img.rows; i++)
+		for (int i = 0; i < bckRows; i++)
 		{
-			ushort* ptrBg = backgroundModel_img.ptr<ushort>(i);
-			uchar* ptrBw = bw.ptr<uchar>(i);
-			ushort* ptrCu = currentDepth->ptr<ushort>(i);
+			//ushort* ptrBg = bMdl_data + (i*bMdl_step);
+			//uchar* ptrBw = bw_data + i*bw_step;
+			//ushort* ptrCu = crrnt_data + i*crrnt_step;
 			
-			for (int j = 0; j < backgroundModel_img.cols; j++)
+			for (int j = 0; j < bckCols; j++)
 			{
-				int depth = ptrBg[j];
-				int currentVal = ptrCu[j];
+				int depth = (bMdl_data + (i*bMdl_step))[j];
+				int currentVal = (crrnt_data + i*crrnt_step)[j];
 
 				//-800: A calibration error leads to points coordinates bigger than MAX_Z. 
 				//A more accurate calibration won't required the decrement
-				if (currentVal != 0 && currentVal < (ActivityMap_Utils::MAX_Z - 1000)) 
+				if (currentVal != 0 && currentVal < (ActivityMap_Utils::MAX_Z-500)) 
 				{
 					int depthMt = depth/1000;
 					//Threshold function linearized with two linear functions
-					/*float thresh;
+					float thresh;
 					if (depthMt > 4)
 						thresh = 229*depthMt - 810;
 					else
-						thresh = 23*depthMt + 14;*/
+						thresh = 23*depthMt + 14;
 					
 					//Quadratic function
-					//float thresh = (18.7441*(powf(depthMt,2)) - 33.3555*depthMt + 33.1847); //Max difference in depth values at different distances
-					float thresh = (20*(powf(depthMt,2)) + 5*depthMt + 200); //Max difference in depth values at different distances
+					//float thresh = (20*(powf(depthMt,2)) + 5*depthMt + 200); //Max difference in depth values at different distances
 					
 					
 					if (abs(depth-currentVal) > thresh)
 					{
-						ptrBw[j] = 1;
+						(bw_data + i*bw_step)[j] = 1;
 						XnPoint3D p;
 						p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentVal;
 						points2D[cont++] = p; 
@@ -340,21 +352,20 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 		}
 
 
-		Mat m;
+	/*	Mat m;
 		erode(bw, bw, m);
-		for (int i = 0; i < bw.rows; i++)
+		for (int i = 0; i < bckRows; i++)
 		{
-			uchar* ptrBw = bw.ptr<uchar>(i);
-			for (int j = 0; j < bw.cols; j++)
+			for (int j = 0; j < bckCols; j++)
 			{
-				if (ptrBw[j] == 1)
+				if ((bw_data + i*bw.step)[j] == 1)
 				{
 					XnPoint3D p;
 					p.X = (XnFloat)j; p.Y = (XnFloat)i; p.Z = currentDepth->ptr<ushort>(i)[j];
 					points2D[cont++] = p; 
 				}
 			}
-		}
+		}*/
 
 		//clean the noise rejecting small areas
 		//vector<vector<Point>> blobs;
