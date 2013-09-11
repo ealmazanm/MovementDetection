@@ -332,9 +332,11 @@ int BackgroundDepthSubtraction::subtraction(XnPoint3D* points2D, Mat* currentDep
 					//Threshold function linearized with two linear functions
 					float thresh;
 					if (depthMt > 4)
-						thresh = 229*depthMt - 810;
+						//thresh = 229*depthMt - 810;
+						thresh = 250*depthMt - 510;
 					else
-						thresh = 23*depthMt + 14;
+						//thresh = 23*depthMt + 14;
+						thresh = 120*depthMt + 60;
 					
 					//Quadratic function
 					//float thresh = (20*(powf(depthMt,2)) + 5*depthMt + 200); //Max difference in depth values at different distances
